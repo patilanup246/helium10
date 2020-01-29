@@ -55,8 +55,8 @@ prefs = {"download.default_directory" : dir_path}
 options.add_experimental_option("prefs",prefs)
 
 def start_driver(username, password):
-    driver = webdriver.Chrome(options=options, executable_path=dir_path + '/chromedriver')
-    # driver = webdriver.Chrome(options=options, executable_path=dir_path + '/windows_chromedriver.exe')
+    #driver = webdriver.Chrome(options=options, executable_path=dir_path + '/chromedriver')
+    driver = webdriver.Chrome(options=options, executable_path=dir_path + '/chromedriver.exe')
     while len(driver.window_handles) == 1:
         pass
     driver.close()
@@ -84,7 +84,7 @@ for index, row in df.iterrows():
     row_pending = True
     while row_pending:
         driver.get(row['url'])
-
+        print(str(row['url']))
         # check if the zip code is correct
         if "90712" not in driver.find_element_by_css_selector('#glow-ingress-line2').text:
             driver.find_element_by_css_selector('#glow-ingress-line2').click()
@@ -109,7 +109,17 @@ for index, row in df.iterrows():
             items = 24
         
         # click Helium10 extension button
-        pyautogui.click(dir_path + '/icons/1.png')
+        try:
+            image = pyautogui.locateOnScreen(dir_path + '/icons/1.png')            # Searches for the image
+            while image == None:
+                image = pyautogui.locateOnScreen(dir_path + '/icons/1.png')
+
+            buttonhel = pyautogui.center(image)
+            buttonhelx, buttonhely = buttonhel
+            pyautogui.click(buttonhelx,buttonhely)
+        except Exception as e:
+            time.sleep(5)
+            pyautogui.click(dir_path + '/icons/1.png')
 
         # click X-Ray function
         max_retries = 5
