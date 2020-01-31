@@ -209,7 +209,7 @@ def main():
                                 break
                         try:
                             df_tosave = pd.read_csv(glob.glob(dir_path + '/Helium*csv')[-1])
-
+                            df_tosave['DownloadTime'] = datetime.datetime.now()
                             for helium_file in glob.glob(dir_path + '/Helium*csv'):
                                 os.remove(helium_file)
 
