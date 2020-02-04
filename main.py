@@ -35,8 +35,8 @@ def helium_next_login(driver, username, password):
 
 
 def start_driver(username, password):
-    driver = webdriver.Chrome(options=options, executable_path=dir_path + '/chromedriver')
-    #driver = webdriver.Chrome(options=options, executable_path=dir_path + '/chromedriver.exe')
+    # driver = webdriver.Chrome(options=options, executable_path=dir_path + '/chromedriver')
+    driver = webdriver.Chrome(options=options, executable_path=dir_path + '/chromedriver.exe')
     while len(driver.window_handles) == 1:
         pass
     driver.close()
@@ -52,22 +52,27 @@ def start_driver(username, password):
 def main():
     df = pd.read_csv(dir_path + '/selection.csv', encoding="ISO-8859-1")
     df = df[df['select']]
-    output_file = '/' + datetime.datetime.now().strftime('%Y%m%d')
+    output_file = '/' + datetime.datetime.now().strftime("%m/%d/%Y%H:%M:%S")
     output_file += '_final.csv'
     credentials_df = pd.read_csv(dir_path + '/credentials.csv')
     for credentials_dfindex, credentials_dfrow in credentials_df.iterrows():
         perlogin = 0
         for index, row in df.iterrows():
             try:
+                time.sleep(5)
                 if row['select'] == True:
+                    
                     if perlogin == 0:
                         driver = start_driver(credentials_dfrow.username, credentials_dfrow.password)
-                    elif perlogin > 10:
+                    elif perlogin > 100:
                         perlogin = 0
                         break
                     row_pending = True
                     while row_pending:
-                        perlogin = perlogin + 1;
+                        perlogin= df.loc[credentials_df.username == credentials_dfrow.username, 'uses']
+                        perlogin = perlogin + 1
+                        credentials_df.loc[(credentials_df.username == credentials_dfrow.username), 'uses'] = perlogin
+                        credentials_df.to_csv(dir_path + '/credentials.csv', index=False)
                         driver.get(row['url'])
                         # check if the zip code is correct
                         if "90712" not in driver.find_element_by_css_selector('#glow-ingress-line2').text:
@@ -80,7 +85,7 @@ def main():
                         # skip if the page is blank
                         if len(results) == 0:
                             row_pending = False
-                            df.loc[(df.url == row['url']), 'select'] = "Error"
+                            df.loc[(df.url == row['url']), 'error'] = "Error : No record found"
                             df.to_csv(dir_path + '/selection.csv', index=False)
                             break
                         try:
@@ -104,12 +109,18 @@ def main():
                                     if image == None:
                                         image = pyautogui.locateOnScreen(dir_path + '/icons/8.png')
                                         if image == None:
+                                            df.loc[(df.url == row[
+                                                'url']), 'error'] = "Error in Chrome Extention button click"
+                                            df.to_csv(dir_path + '/selection.csv', index=False)
                                             break
 
                             buttonhel = pyautogui.center(image)
                             buttonhelx, buttonhely = buttonhel
                             pyautogui.click(buttonhelx, buttonhely)
+                            time.sleep(10)
                         except Exception as e:
+                            df.loc[(df.url == row['url']), 'error'] = "Error in Chrome Extention button click"
+                            df.to_csv(dir_path + '/selection.csv', index=False)
                             time.sleep(5)
                             break
 
@@ -126,29 +137,39 @@ def main():
                                         imageopen = pyautogui.locateOnScreen(dir_path + '/icons/5.png')
                                         if imageopen == None:
                                             imageopen = pyautogui.locateOnScreen(dir_path + '/icons/7.png')
-                                    if imageopen == None:
-                                        limitover = pyautogui.locateOnScreen(dir_path + '/icons/limitover.png')
-                                        if limitover != None:
-                                            break
+                                            if imageopen == None:
+                                                imageopen = pyautogui.locateOnScreen(dir_path + '/icons/x1.png')
+                                                if imageopen == None:
+                                                    imageopen = pyautogui.locateOnScreen(dir_path + '/icons/x2.png')
+                                                    if imageopen == None:
+                                                        imageopen = pyautogui.locateOnScreen(dir_path + '/icons/x3.png')
+                                                        if imageopen == None:
+                                                            imageopen = pyautogui.locateOnScreen(
+                                                                dir_path + '/icons/x4.png')
+                                                            if imageopen == None:
+                                                                imageopen = pyautogui.locateOnScreen(
+                                                                    dir_path + '/icons/x4.png')
+                                                                if imageopen == None:
+                                                                    break
 
                                 buttonopen = pyautogui.center(imageopen)
                                 buttonopenx, buttonopeny = buttonopen
                                 pyautogui.click(buttonopenx, buttonopeny)
+                                time.sleep(10)
                                 break
                             except:
+                                df.loc[(df.url == row[
+                                    'url']), 'error'] = "Error in Xray- Amazon button click"
+                                df.to_csv(dir_path + '/selection.csv', index=False)
                                 time.sleep(3)
                                 break
                         if imageopen == None:
+                            df.loc[(df.url == row[
+                                'url']), 'error'] = "Error in Xray- Amazon button click"
+                            df.to_csv(dir_path + '/selection.csv', index=False)
                             break
 
-                        time.sleep(5)
-                        start_wait_time = time.time()
-                        current_wait_time = time.time() - start_wait_time
-                        while '$' not in driver.find_element_by_css_selector(
-                                '#h10-bb-sales-number').text and current_wait_time <= wait_time:
-                            current_wait_time = time.time() - start_wait_time
-                            time.sleep(1.5)
-                            pass
+                        time.sleep(70)
 
                         # load more if there are more than 24 items
                         if items > 24:
@@ -187,16 +208,28 @@ def main():
                         try:
                             imagedown = pyautogui.locateOnScreen(dir_path + '/icons/3.png')  # Searches for the image
                             if imagedown == None:
-                                imagedown = pyautogui.locateOnScreen(dir_path + '/icons/3.png')
+                                imagedown = pyautogui.locateOnScreen(dir_path + '/icons/d1.png')
                                 if imagedown == None:
                                     imagedown = pyautogui.locateOnScreen(dir_path + '/icons/6.png')
                                     if imagedown == None:
-                                        break
-
+                                        imagedown = pyautogui.locateOnScreen(dir_path + '/icons/d2.png')
+                                        if imagedown == None:
+                                            imagedown = pyautogui.locateOnScreen(dir_path + '/icons/d3.png')
+                                            if imagedown == None:
+                                                imagedown = pyautogui.locateOnScreen(dir_path + '/icons/d4.png')
+                                                if imagedown == None:
+                                                    imagedown = pyautogui.locateOnScreen(dir_path + '/icons/d5.png')
+                                                    if imagedown == None:
+                                                        df.loc[(df.url == row[
+                                                            'url']), 'error'] = "Error Download button click"
+                                                        df.to_csv(dir_path + '/selection.csv', index=False)
+                                                        break
                             buttondown = pyautogui.center(imagedown)
                             buttondownx, buttondowny = buttondown
                             pyautogui.click(buttondownx, buttondowny)
                         except:
+                            df.loc[(df.url == row['url']), 'error'] = "Error Download button click"
+                            df.to_csv(dir_path + '/selection.csv', index=False)
                             time.sleep(3)
                             break
 
@@ -219,7 +252,7 @@ def main():
                                 df_final = pd.concat([df_final, df_tosave], axis=0)
                                 df_final.to_csv(dir_path + output_file, encoding="utf-8", index=False)
                             else:
-                                df_tosave.assign(**row).to_csv(dir_path + output_file,encoding="utf-8", index=False)
+                                df_tosave.assign(**row).to_csv(dir_path + output_file, encoding="utf-8", index=False)
                         except Exception as e:
                             try:
                                 if os.path.exists(dir_path + output_file):
@@ -241,25 +274,32 @@ def main():
                                         df_tosave.assign(**row).to_csv(dir_path + output_file, index=False,
                                                                        encoding='latin-1')
                                 except Exception as e:
-                                    print("Error CSV : " + str(e))
+                                    df.loc[(df.url == row['url']), 'error'] = "Error :" + str(e)
+                                    df.to_csv(dir_path + '/selection.csv', index=False)
+                                    break
                         row_pending = False
-                    df.loc[(df.url == row['url']), 'select'] = False
-                    df.to_csv(dir_path + '/selection.csv', index=False)
+                        df.loc[(df.url == row['url']), 'select'] = False
+                        df.to_csv(dir_path + '/selection.csv', index=False)
+
+                        df.loc[(df.url == row['url']), 'error'] = ""
+                        df.to_csv(dir_path + '/selection.csv', index=False)
             except Exception as e:
-                print("Error " + str(e))
+                df.loc[(df.url == row['url']), 'error'] = "Error :" + str(e)
+                df.to_csv(dir_path + '/selection.csv', index=False)
+                pass
 
 
 if __name__ == "__main__":
     print("script start...!!")
     try:
-        first=True
+        first = True
         a = 1
         while a == 1:
             now = datetime.datetime.now()
-            if first==True:
+            if first == True:
                 main()
                 first = False
-            if now.hour==7 and now.minute>10 and now.minute<20:
+            if now.hour == 7 and now.minute > 10 and now.minute < 20:
                 main()
     except Exception as e:
         print("Error " + str(e))
